@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.egg-info/
+.env
+polling.db
+# Virtual environment
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# VS Code
+.vscode/
+.history/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Pytest
+.cache/
+*.cover
+
+# mypy
+.mypy_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Cython debug symbols
+cython_debug/
+
+# IDEs
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Misc
+*.log
+*.pot
+*.mo
+*.orig

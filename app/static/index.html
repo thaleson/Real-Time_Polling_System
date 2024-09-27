@@ -1,0 +1,291 @@
+<!-- app/static/index.html -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Enquetes em Tempo Real</title>
+    <style>
+        /* Reset básico para remover margens e paddings padrão */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        #create-poll-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        #create-poll-container button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #create-poll-container button:hover {
+            background-color: #2980b9;
+        }
+
+        .poll {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
+
+        .poll:hover {
+            transform: translateY(-5px);
+        }
+
+        .poll h2 {
+            margin-bottom: 20px;
+            color: #34495e;
+        }
+
+        .options {
+            list-style: none;
+        }
+
+        .options li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .option-text {
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .votes {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-right: 10px;
+        }
+
+        .vote-button {
+            background-color: #2ecc71;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .vote-button:hover {
+            background-color: #27ae60;
+        }
+
+        .progress-bar-container {
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            width: 100%;
+            height: 20px;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            background-color: #3498db;
+            height: 100%;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 600px) {
+            .options li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .vote-button {
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Sistema de Enquetes em Tempo Real</h1>
+
+    <div id="create-poll-container">
+        <button onclick="createPoll()">Criar Enquete</button>
+    </div>
+
+    <div id="polls"></div>
+
+    <script>
+        const pollsContainer = document.getElementById('polls');
+
+        // Função para carregar todas as enquetes existentes ao iniciar a página
+        async function loadPolls() {
+            const response = await fetch('/polls/');
+            if (response.ok) {
+                const polls = await response.json();
+                polls.forEach(poll => addPollToDOM(poll));
+            } else {
+                const error = await response.json();
+                alert(`Erro ao carregar enquetes: ${error.detail}`);
+            }
+        }
+
+        // Função para criar uma nova enquete
+        async function createPoll() {
+            const question = prompt("Digite a pergunta da enquete:");
+            if (!question) return;
+            const optionsInput = prompt("Digite as opções da enquete separadas por vírgula:");
+            if (!optionsInput) return;
+            const options = optionsInput.split(',').map(opt => opt.trim()).filter(opt => opt);
+
+            const response = await fetch('/polls/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, options })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                addPollToDOM(data);
+            } else {
+                const error = await response.json();
+                alert(`Erro: ${error.detail}`);
+            }
+        }
+
+        // Função para adicionar uma enquete ao DOM
+        function addPollToDOM(poll) {
+            const pollDiv = document.createElement('div');
+            pollDiv.className = 'poll';
+            pollDiv.id = `poll-${poll.id}`;
+
+            const title = document.createElement('h2');
+            title.textContent = poll.question;
+            pollDiv.appendChild(title);
+
+            const optionsList = document.createElement('ul');
+            optionsList.className = 'options';
+
+            for (const [option, votes] of Object.entries(poll.options)) {
+                const optionItem = document.createElement('li');
+
+                const optionInfo = document.createElement('div');
+                optionInfo.style.width = '70%';
+
+                const optionText = document.createElement('span');
+                optionText.className = 'option-text';
+                optionText.textContent = option;
+
+                const votesText = document.createElement('span');
+                votesText.className = 'votes';
+                votesText.id = `votes-${poll.id}-${option}`;
+                votesText.textContent = `${votes} votos`;
+
+                const progressBarContainer = document.createElement('div');
+                progressBarContainer.className = 'progress-bar-container';
+
+                const progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                progressBar.style.width = '0%'; // Inicialmente 0%
+
+                progressBarContainer.appendChild(progressBar);
+
+                optionInfo.appendChild(optionText);
+                optionInfo.appendChild(votesText);
+                optionInfo.appendChild(progressBarContainer);
+
+                const voteButton = document.createElement('button');
+                voteButton.className = 'vote-button';
+                voteButton.textContent = 'Votar';
+                voteButton.onclick = () => vote(poll.id, option);
+
+                optionItem.appendChild(optionInfo);
+                optionItem.appendChild(voteButton);
+
+                optionsList.appendChild(optionItem);
+            }
+
+            pollDiv.appendChild(optionsList);
+            pollsContainer.appendChild(pollDiv);
+
+            // Conectar ao WebSocket para essa enquete
+            connectWebSocket(poll.id);
+        }
+
+        // Função para votar em uma opção
+        async function vote(poll_id, option) {
+            const response = await fetch(`/polls/${poll_id}/vote/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ option })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Opcional: Atualizar localmente sem esperar o WebSocket
+                // Atualizar o contador de votos
+                const voteSpan = document.getElementById(`votes-${poll_id}-${option}`);
+                if (voteSpan) {
+                    let currentVotes = parseInt(voteSpan.textContent);
+                    voteSpan.textContent = `${currentVotes + 1} votos`;
+                }
+            } else {
+                const error = await response.json();
+                alert(`Erro: ${error.detail}`);
+            }
+        }
+
+        // Função para conectar ao WebSocket
+        function connectWebSocket(poll_id) {
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const ws = new WebSocket(`${protocol}://${window.location.host}/ws/polls/${poll_id}`);
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                for (const [option, votes] of Object.entries(data.options)) {
+                    const voteSpan = document.getElementById(`votes-${data.id}-${option}`);
+                    if (voteSpan) {
+                        voteSpan.textContent = `${votes} votos`;
+                        // Atualizar a barra de progresso
+                        const progressBar = voteSpan.nextElementSibling.firstElementChild;
+                        const totalVotes = Object.values(data.options).reduce((a, b) => a + b, 0);
+                        const percentage = totalVotes === 0 ? 0 : ((votes / totalVotes) * 100).toFixed(2);
+                        progressBar.style.width = `${percentage}%`;
+                    }
+                }
+            };
+
+            ws.onclose = function() {
+                console.log(`WebSocket para enquete ${poll_id} fechado.`);
+            };
+        }
+
+        // Inicializar ao carregar a página
+        loadPolls();
+    </script>
+</body>
+</html>
